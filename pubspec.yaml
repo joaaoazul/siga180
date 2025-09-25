@@ -13,15 +13,24 @@ dependencies:
   supabase_flutter: ^2.3.0
   flutter_riverpod: ^2.4.0
   intl: ^0.18.0
+  # UI/Animações
+  google_fonts: ^6.3.2
+  animations: ^2.0.8
+  flutter_animate: ^4.3.0
   
-  # UI (opcional mas recomendado)
-  flutter_svg: ^2.0.9
-  cached_network_image: ^3.3.0
-  shimmer: ^3.0.0
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^3.0.0
-
+  # Componentes
+  flutter_slidable: ^4.0.1
+  modal_bottom_sheet: ^3.0.0
+  
+  # Forms/Validação
+  reactive_forms: ^16.1.1
+  mask_text_input_formatter: ^2.9.0
+  
+  # Loading/Feedback
+  flutter_spinkit: ^5.2.0
+  fluttertoast: ^8.2.4
+  
+  # Charts (para dashboard)
+  fl_chart: ^0.65.0
 flutter:
   uses-material-design: true

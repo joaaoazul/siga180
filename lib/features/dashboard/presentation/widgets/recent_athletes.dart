@@ -37,9 +37,7 @@ class RecentAthletes extends StatelessWidget {
                 ),
               ),
               TextButton.icon(
-                onPressed: () {
-                  // TODO: Navigate to athletes
-                },
+                onPressed: () {},
                 icon: const Icon(Icons.arrow_forward, size: 16),
                 label: const Text('Ver todos'),
                 style: TextButton.styleFrom(
@@ -58,7 +56,7 @@ class RecentAthletes extends StatelessWidget {
                 children: [
                   ...athletes
                       .take(5)
-                      .map((athlete) => AthleteListItem(athlete: athlete)),
+                      .map((athlete) => _AthleteListItem(athlete: athlete)),
                   const SizedBox(height: 24),
                   _buildAddButton(),
                 ],
@@ -83,9 +81,7 @@ class RecentAthletes extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         ElevatedButton.icon(
-          onPressed: () {
-            // TODO: Navigate to add athlete
-          },
+          onPressed: () {},
           icon: const Icon(Icons.add, size: 18),
           label: const Text('Adicionar Primeiro Atleta'),
           style: ElevatedButton.styleFrom(
@@ -101,9 +97,7 @@ class RecentAthletes extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: () {
-          // TODO: Navigate to add athlete
-        },
+        onPressed: () {},
         icon: const Icon(Icons.person_add, size: 18),
         label: const Text('Adicionar Novo Atleta'),
         style: ElevatedButton.styleFrom(
@@ -116,10 +110,10 @@ class RecentAthletes extends StatelessWidget {
   }
 }
 
-class AthleteListItem extends StatelessWidget {
+class _AthleteListItem extends StatelessWidget {
   final Map<String, dynamic> athlete;
 
-  const AthleteListItem({super.key, required this.athlete});
+  const _AthleteListItem({required this.athlete});
 
   @override
   Widget build(BuildContext context) {

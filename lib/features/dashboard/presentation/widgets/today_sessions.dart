@@ -6,7 +6,6 @@ class TodaysSessions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mock data - substituir por dados reais
     final sessions = [
       {
         'id': 1,
@@ -21,13 +20,6 @@ class TodaysSessions extends StatelessWidget {
         'time': '15:00',
         'duration': '1h',
         'type': 'Cardio'
-      },
-      {
-        'id': 3,
-        'athlete': {'name': 'Pedro Costa'},
-        'time': '16:00',
-        'duration': '1h',
-        'type': 'Funcional'
       },
     ];
 
@@ -59,9 +51,7 @@ class TodaysSessions extends StatelessWidget {
                 ),
               ),
               TextButton.icon(
-                onPressed: () {
-                  // TODO: Navigate to sessions
-                },
+                onPressed: () {},
                 icon: const Icon(Icons.arrow_forward, size: 16),
                 label: const Text('Ver todas'),
                 style: TextButton.styleFrom(
@@ -74,7 +64,7 @@ class TodaysSessions extends StatelessWidget {
           if (sessions.isEmpty)
             _buildEmptyState()
           else
-            ...sessions.map((session) => SessionCard(session: session)),
+            ...sessions.map((session) => _SessionCard(session: session)),
         ],
       ),
     );
@@ -98,10 +88,10 @@ class TodaysSessions extends StatelessWidget {
   }
 }
 
-class SessionCard extends StatelessWidget {
+class _SessionCard extends StatelessWidget {
   final Map<String, dynamic> session;
 
-  const SessionCard({super.key, required this.session});
+  const _SessionCard({required this.session});
 
   @override
   Widget build(BuildContext context) {

@@ -17,47 +17,35 @@ class QuickActions extends StatelessWidget {
           crossAxisSpacing: 16,
           childAspectRatio: 3,
           children: [
-            QuickActionButton(
+            _QuickActionButton(
               icon: Icons.fitness_center_rounded,
               label: 'Criar Treino',
-              onPressed: () {
-                // TODO: Navigate to create workout
-              },
+              onPressed: () {},
             ),
-            QuickActionButton(
+            _QuickActionButton(
               icon: Icons.restaurant_rounded,
               label: 'Planos Nutrição',
-              onPressed: () {
-                // TODO: Navigate to nutrition
-              },
+              onPressed: () {},
             ),
-            QuickActionButton(
+            _QuickActionButton(
               icon: Icons.bar_chart_rounded,
               label: 'Análises',
-              onPressed: () {
-                // TODO: Navigate to analytics
-              },
+              onPressed: () {},
             ),
-            QuickActionButton(
+            _QuickActionButton(
               icon: Icons.calendar_today_rounded,
               label: 'Agendar',
-              onPressed: () {
-                // TODO: Navigate to schedule
-              },
+              onPressed: () {},
             ),
-            QuickActionButton(
+            _QuickActionButton(
               icon: Icons.assessment_rounded,
               label: 'Relatórios',
-              onPressed: () {
-                // TODO: Navigate to reports
-              },
+              onPressed: () {},
             ),
-            QuickActionButton(
+            _QuickActionButton(
               icon: Icons.video_library_rounded,
               label: 'Vídeos',
-              onPressed: () {
-                // TODO: Navigate to videos
-              },
+              onPressed: () {},
             ),
           ],
         );
@@ -66,13 +54,12 @@ class QuickActions extends StatelessWidget {
   }
 }
 
-class QuickActionButton extends StatelessWidget {
+class _QuickActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onPressed;
 
-  const QuickActionButton({
-    super.key,
+  const _QuickActionButton({
     required this.icon,
     required this.label,
     required this.onPressed,
