@@ -1,0 +1,861 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Forçar orientação vertical em mobile
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  
+ await Supabase.initialize(
+    url: 'https://qxjaofxqujnufirdcwgc.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4amFvZnhxdWpudWZpcmRjd2djIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3MDQ4MzQsImV4cCI6MjA3NDI4MDgzNH0.hrxLaXJ2dVgL3u2DpcDIIWuk0hp7lr7aNVJfExgwuYI',
+  );
+  
+  runApp(
+    const ProviderScope(
+      child: Siga180App(),
+    ),
+  );
+}
+
+// ================================================
+// APP PRINCIPAL
+// ================================================
+class Siga180App extends StatelessWidget {
+  const Siga180App({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'SIGA180',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        fontFamily: 'Poppins',
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF333333),
+          primary: const Color(0xFF333333),
+          secondary: const Color(0xFF6B8E23),
+          tertiary: const Color(0xFFE8ECE3),
+        ),
+        appBarTheme: const AppBarTheme(
+          elevation: 0,
+          centerTitle: false,
+          backgroundColor: Color(0xFF333333),
+          foregroundColor: Colors.white,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        cardTheme: CardTheme(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+      home: const AuthWrapper(),
+    );
+  }
+}
+
+// ================================================
+// AUTH WRAPPER
+// ================================================
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final session = Supabase.instance.client.auth.currentSession;
+    return session != null ? const DashboardScreen() : const LoginScreen();
+  }
+}
+
+// ================================================
+// LOGIN SCREEN - BONITO!
+// ================================================
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
+  bool _isLoading = false;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      _showMessage('Por favor preencha todos os campos', isError: true);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await Supabase.instance.client.auth.signInWithPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      if (response.user != null && mounted) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => const DashboardScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+          ),
+        );
+      }
+    } catch (e) {
+      _showMessage('Erro no login: ${e.toString()}', isError: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showMessage(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red[600] : Colors.green[600],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.width > 600;
+
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF333333),
+              Color(0xFF1a1a1a),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Container(
+                  width: isTablet ? 450 : size.width * 0.9,
+                  padding: const EdgeInsets.all(32),
+                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 30,
+                        offset: const Offset(0, 15),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Logo animado
+                      TweenAnimationBuilder(
+                        tween: Tween<double>(begin: 0, end: 1),
+                        duration: const Duration(seconds: 1),
+                        builder: (context, double value, child) {
+                          return Transform.scale(
+                            scale: value,
+                            child: Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF6B8E23), Color(0xFF333333)],
+                                ),
+                                borderRadius: BorderRadius.circular(50),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF6B8E23).withOpacity(0.3),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.fitness_center,
+                                size: 50,
+                                color: Colors.white,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Título
+                      const Text(
+                        'SIGA180',
+                        style: TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Personal Trainer Management',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+
+                      // Email Field
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        style: const TextStyle(fontSize: 16),
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          hintText: 'seu@email.com',
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFF6B8E23), width: 2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Password Field
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: !_isPasswordVisible,
+                        style: const TextStyle(fontSize: 16),
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          hintText: '••••••••',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                              color: Colors.grey[600],
+                            ),
+                            onPressed: () {
+                              setState(() => _isPasswordVisible = !_isPasswordVisible);
+                            },
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFF6B8E23), width: 2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Forgot Password
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {
+                            // TODO: Implement forgot password
+                          },
+                          child: const Text(
+                            'Esqueceu a password?',
+                            style: TextStyle(color: Color(0xFF6B8E23)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Login Button
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _handleLogin,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF333333),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: _isLoading ? 0 : 8,
+                            shadowColor: const Color(0xFF333333).withOpacity(0.3),
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.login, size: 20),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Entrar',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Register Link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Não tem conta? ',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              // TODO: Navigate to register
+                            },
+                            child: const Text(
+                              'Registar agora',
+                              style: TextStyle(
+                                color: Color(0xFF6B8E23),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ================================================
+// DASHBOARD SCREEN - COMPLETO!
+// ================================================
+class DashboardScreen extends ConsumerStatefulWidget {
+  const DashboardScreen({super.key});
+
+  @override
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  int _selectedIndex = 0;
+
+  final List<NavigationItem> _navigationItems = [
+    NavigationItem(icon: Icons.dashboard, label: 'Dashboard', color: const Color(0xFF333333)),
+    NavigationItem(icon: Icons.people, label: 'Atletas', color: const Color(0xFF6B8E23)),
+    NavigationItem(icon: Icons.fitness_center, label: 'Treinos', color: Colors.orange),
+    NavigationItem(icon: Icons.restaurant_menu, label: 'Nutrição', color: Colors.green),
+    NavigationItem(icon: Icons.calendar_month, label: 'Agenda', color: Colors.blue),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.width > 600;
+    final user = Supabase.instance.client.auth.currentUser;
+
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      body: Row(
+        children: [
+          // Sidebar for tablets/desktop
+          if (isTablet)
+            NavigationRail(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) {
+                setState(() => _selectedIndex = index);
+              },
+              extended: size.width > 900,
+              backgroundColor: const Color(0xFF333333),
+              selectedIconTheme: const IconThemeData(color: Colors.white),
+              unselectedIconTheme: IconThemeData(color: Colors.white.withOpacity(0.5)),
+              selectedLabelTextStyle: const TextStyle(color: Colors.white),
+              unselectedLabelTextStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+              destinations: _navigationItems.map((item) {
+                return NavigationRailDestination(
+                  icon: Icon(item.icon),
+                  label: Text(item.label),
+                );
+              }).toList(),
+            ),
+
+          // Main Content
+          Expanded(
+            child: SafeArea(
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: [
+                  _buildDashboard(user),
+                  _buildAthletesView(),
+                  _buildWorkoutsView(),
+                  _buildNutritionView(),
+                  _buildCalendarView(),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      
+      // Bottom Navigation for mobile
+      bottomNavigationBar: !isTablet
+          ? Container(
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: BottomNavigationBar(
+                currentIndex: _selectedIndex,
+                onTap: (index) => setState(() => _selectedIndex = index),
+                type: BottomNavigationBarType.fixed,
+                backgroundColor: Colors.white,
+                selectedItemColor: const Color(0xFF333333),
+                unselectedItemColor: Colors.grey,
+                selectedFontSize: 12,
+                unselectedFontSize: 12,
+                items: _navigationItems.map((item) {
+                  return BottomNavigationBarItem(
+                    icon: Icon(item.icon),
+                    label: item.label,
+                  );
+                }).toList(),
+              ),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildDashboard(User? user) {
+    final athletesAsync = ref.watch(athletesStreamProvider);
+
+    return CustomScrollView(
+      slivers: [
+        // Header
+        SliverAppBar(
+          expandedHeight: 200,
+          floating: false,
+          pinned: true,
+          backgroundColor: const Color(0xFF333333),
+          flexibleSpace: FlexibleSpaceBar(
+            background: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF333333), Color(0xFF1a1a1a)],
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Olá, ${user?.email?.split('@')[0] ?? 'Trainer'}! 👋',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _getFormattedDate(),
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+              onPressed: () {},
+            ),
+            IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white),
+              onPressed: () async {
+                await Supabase.instance.client.auth.signOut();
+                if (mounted) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+
+        // Stats Cards
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: athletesAsync.when(
+            data: (athletes) {
+              final stats = _calculateStats(athletes);
+              return SliverGrid(
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 200,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 1.3,
+                ),
+                delegate: SliverChildListDelegate([
+                  _buildStatCard('Total Atletas', '${stats['total']}', Icons.people, const Color(0xFF333333)),
+                  _buildStatCard('Ativos', '${stats['active']}', Icons.check_circle, Colors.green),
+                  _buildStatCard('Sessões Hoje', '${stats['sessions']}', Icons.today, Colors.orange),
+                  _buildStatCard('Novos', '${stats['new']}', Icons.star, const Color(0xFF6B8E23)),
+                ]),
+              );
+            },
+            loading: () => const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator())),
+            error: (e, s) => SliverToBoxAdapter(child: Center(child: Text('Erro: $e'))),
+          ),
+        ),
+
+        // Recent Athletes
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Atletas Recentes',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                athletesAsync.when(
+                  data: (athletes) => athletes.isEmpty
+                      ? _buildEmptyState()
+                      : Column(
+                          children: athletes.take(5).map((athlete) {
+                            return _buildAthleteCard(athlete);
+                          }).toList(),
+                        ),
+                  loading: () => const CircularProgressIndicator(),
+                  error: (e, s) => Text('Erro: $e'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAthleteCard(Map<String, dynamic> athlete) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: CircleAvatar(
+          backgroundColor: const Color(0xFF6B8E23),
+          radius: 25,
+          child: Text(
+            (athlete['name'] ?? 'A')[0].toUpperCase(),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
+        title: Text(
+          athlete['name'] ?? 'Sem nome',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(athlete['email'] ?? ''),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: _getStatusColor(athlete['status']).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            athlete['status'] ?? 'active',
+            style: TextStyle(
+              color: _getStatusColor(athlete['status']),
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.all(40),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.people_outline, size: 64, color: Colors.grey[300]),
+          const SizedBox(height: 16),
+          Text(
+            'Ainda sem atletas',
+            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Adicione o seu primeiro atleta para começar',
+            style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              setState(() => _selectedIndex = 1);
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Adicionar Atleta'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6B8E23),
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAthletesView() {
+    return const Center(child: Text('Gestão de Atletas'));
+  }
+
+  Widget _buildWorkoutsView() {
+    return const Center(child: Text('Planos de Treino'));
+  }
+
+  Widget _buildNutritionView() {
+    return const Center(child: Text('Planos Nutricionais'));
+  }
+
+  Widget _buildCalendarView() {
+    return const Center(child: Text('Calendário'));
+  }
+
+  Map<String, int> _calculateStats(List<Map<String, dynamic>> athletes) {
+    return {
+      'total': athletes.length,
+      'active': athletes.where((a) => a['status'] == 'active').length,
+      'sessions': 0, // TODO: Fetch from sessions table
+      'new': athletes.where((a) {
+        final created = DateTime.tryParse(a['created_at'] ?? '');
+        if (created == null) return false;
+        final now = DateTime.now();
+        return created.month == now.month && created.year == now.year;
+      }).length,
+    };
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status) {
+      case 'active':
+        return Colors.green;
+      case 'inactive':
+        return Colors.red;
+      case 'pending':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getFormattedDate() {
+    final now = DateTime.now();
+    const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+    const months = [
+      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+    ];
+    
+    return '${weekDays[now.weekday - 1]}, ${now.day} de ${months[now.month - 1]}';
+  }
+}
+
+// ================================================
+// PROVIDERS
+// ================================================
+final athletesStreamProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+  final userId = Supabase.instance.client.auth.currentUser?.id;
+  
+  if (userId == null) return Stream.value([]);
+  
+  return Supabase.instance.client
+      .from('athletes')
+      .stream(primaryKey: ['id'])
+      .eq('trainer_id', userId);
+});
+
+// ================================================
+// MODELS
+// ================================================
+class NavigationItem {
+  final IconData icon;
+  final String label;
+  final Color color;
+  
+  NavigationItem({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+}
