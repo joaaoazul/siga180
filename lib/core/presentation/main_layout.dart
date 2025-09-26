@@ -162,3 +162,14 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     }
   }
 }
+
+class AthletesScreen extends StatelessWidget {
+  const AthletesScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(child: Text('Athletes Screen')),
+    );
+  }
+}

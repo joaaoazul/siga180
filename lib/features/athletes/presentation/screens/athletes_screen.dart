@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../models/athlete_model.dart';
-import '../../../../core/services/auth_service.dart';
 import '../../data/services/athletes_service.dart';
 import '../widgets/add_athlete_dialog.dart';
 
@@ -60,6 +58,7 @@ class _AthletesScreenState extends ConsumerState<AthletesScreen> {
         icon: const Icon(Icons.add),
         label: const Text('Novo Atleta'),
         backgroundColor: AppColors.primaryOlive,
+        foregroundColor: Colors.white,
       ),
     );
   }
@@ -76,9 +75,9 @@ class _AthletesScreenState extends ConsumerState<AthletesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Atletas',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
               color: AppColors.primaryDark,
@@ -115,6 +114,15 @@ class _AthletesScreenState extends ConsumerState<AthletesScreen> {
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.cardBorder),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.cardBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.primaryOlive, width: 2),
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16),
               ),
@@ -165,6 +173,10 @@ class _AthletesScreenState extends ConsumerState<AthletesScreen> {
                   foregroundColor: Colors.white,
                   icon: Icons.edit,
                   label: 'Editar',
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
+                  ),
                 ),
                 SlidableAction(
                   onPressed: (_) => _deleteAthlete(athlete),
@@ -172,6 +184,10 @@ class _AthletesScreenState extends ConsumerState<AthletesScreen> {
                   foregroundColor: Colors.white,
                   icon: Icons.delete,
                   label: 'Apagar',
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  ),
                 ),
               ],
             ),
@@ -193,9 +209,9 @@ class _AthletesScreenState extends ConsumerState<AthletesScreen> {
             color: Colors.grey[300],
           ),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             'Sem atletas',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w600,
               color: AppColors.textGray,
@@ -214,9 +230,12 @@ class _AthletesScreenState extends ConsumerState<AthletesScreen> {
   List<Athlete> _filterAthletes(List<Athlete> athletes) {
     return athletes.where((athlete) {
       final matchesSearch = _searchQuery.isEmpty ||
-          athlete.name.toLowerCase().contains(_searchQuery.toLowerCase());
+          athlete.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          (athlete.email?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+      
       final matchesFilter = _filterStatus == 'all' ||
           athlete.status == _filterStatus;
+      
       return matchesSearch && matchesFilter;
     }).toList();
   }
@@ -232,6 +251,12 @@ class _AthletesScreenState extends ConsumerState<AthletesScreen> {
   
   void _editAthlete(Athlete athlete) {
     // TODO: Implementar edição
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Editar ${athlete.name} - Em desenvolvimento'),
+        backgroundColor: AppColors.info,
+      ),
+    );
   }
   
   void _deleteAthlete(Athlete athlete) async {
@@ -239,7 +264,7 @@ class _AthletesScreenState extends ConsumerState<AthletesScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmar'),
-        content: Text('Apagar ${athlete.name}?'),
+        content: Text('Tem certeza que deseja apagar ${athlete.name}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -253,10 +278,52 @@ class _AthletesScreenState extends ConsumerState<AthletesScreen> {
       ),
     );
     
-    if (confirmed == true) {
-      final service = ref.read(athletesServiceProvider);
-      await service.deleteAthlete(athlete.id);
+    if (confirmed == true && mounted) {
+      try {
+        final service = ref.read(athletesServiceProvider);
+        await service.deleteAthlete(athlete.id);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Atleta removido com sucesso'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erro ao remover atleta: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
     }
+  }
+}
+
+class AddAthleteDialog extends StatelessWidget {
+  const AddAthleteDialog({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: Implement the actual dialog UI
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Center(
+        child: Text(
+          'Adicionar Atleta (Em desenvolvimento)',
+          style: TextStyle(fontSize: 18, color: AppColors.primaryDark),
+        ),
+      ),
+    );
   }
 }
 
@@ -283,40 +350,45 @@ class _AthleteCard extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // Avatar
           Container(
             width: 60,
             height: 60,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [AppColors.primaryOlive, AppColors.accent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
-                athlete.name[0].toUpperCase(),
+                athlete.initials,
                 style: const TextStyle(
-                  color: AppColors.primaryDark,
-                  fontSize: 24,
+                  color: Colors.white,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
           const SizedBox(width: 16),
+          
+          // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   athlete.name,
-                  style: GoogleFonts.poppins(
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: AppColors.primaryDark,
                   ),
                 ),
-                if (athlete.email != null)
+                if (athlete.email != null && athlete.email!.isNotEmpty)
                   Text(
                     athlete.email!,
                     style: const TextStyle(
@@ -324,21 +396,84 @@ class _AthleteCard extends StatelessWidget {
                       fontSize: 14,
                     ),
                   ),
-                if (athlete.phone != null)
-                  Text(
-                    athlete.phone!,
-                    style: const TextStyle(
-                      color: AppColors.lightGray,
-                      fontSize: 13,
-                    ),
-                  ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    if (athlete.phone != null && athlete.phone!.isNotEmpty) ...[
+                      Icon(Icons.phone, size: 14, color: AppColors.lightGray),
+                      const SizedBox(width: 4),
+                      Text(
+                        athlete.phone!,
+                        style: const TextStyle(
+                          color: AppColors.lightGray,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                    if (athlete.age != null) ...[
+                      Icon(Icons.cake, size: 14, color: AppColors.lightGray),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${athlete.age} anos',
+                        style: const TextStyle(
+                          color: AppColors.lightGray,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ],
             ),
           ),
-          _StatusBadge(status: athlete.status),
+          
+          // Status Badge & Info
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _StatusBadge(status: athlete.status),
+              const SizedBox(height: 8),
+              if (athlete.goal.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryOlive.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    _getGoalLabel(athlete.goal),
+                    style: TextStyle(
+                      color: AppColors.primaryOlive,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );
+  }
+  
+  String _getGoalLabel(String goal) {
+    switch (goal) {
+      case 'muscle_gain':
+        return 'Ganho Muscular';
+      case 'fat_loss':
+        return 'Perda de Gordura';
+      case 'maintenance':
+        return 'Manutenção';
+      case 'performance':
+        return 'Performance';
+      case 'endurance':
+        return 'Resistência';
+      case 'strength':
+        return 'Força';
+      default:
+        return 'Geral';
+    }
   }
 }
 
@@ -358,14 +493,33 @@ class _StatusBadge extends StatelessWidget {
             ? AppColors.success.withOpacity(0.1)
             : AppColors.lightGray.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        isActive ? 'Ativo' : 'Inativo',
-        style: TextStyle(
-          color: isActive ? AppColors.success : AppColors.lightGray,
-          fontWeight: FontWeight.w600,
-          fontSize: 12,
+        border: Border.all(
+          color: isActive
+              ? AppColors.success.withOpacity(0.3)
+              : AppColors.lightGray.withOpacity(0.3),
         ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: isActive ? AppColors.success : AppColors.lightGray,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            isActive ? 'Ativo' : 'Inativo',
+            style: TextStyle(
+              color: isActive ? AppColors.success : AppColors.lightGray,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }

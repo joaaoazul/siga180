@@ -1,30 +1,39 @@
-import 'package:dartz/dartz.dart';
-import '../models/athlete.dart';
+import '../../../models/athlete_model.dart';
+
+// Classe para encapsular resultados com sucesso ou erro
+class Result<T> {
+  final T? data;
+  final String? error;
+  final bool isSuccess;
+
+  Result.success(this.data) : error = null, isSuccess = true;
+  Result.error(this.error) : data = null, isSuccess = false;
+}
 
 abstract class IAthleteRepository {
   // CRUD Operations
-  Future<Either<String, List<Athlete>>> getAllAthletes();
-  Future<Either<String, Athlete>> getAthleteById(String id);
-  Future<Either<String, Athlete>> createAthlete(Athlete athlete);
-  Future<Either<String, Athlete>> updateAthlete(Athlete athlete);
-  Future<Either<String, bool>> deleteAthlete(String id);
+  Future<Result<List<Athlete>>> getAllAthletes();
+  Future<Result<Athlete>> getAthleteById(String id);
+  Future<Result<Athlete>> createAthlete(Athlete athlete);
+  Future<Result<Athlete>> updateAthlete(Athlete athlete);
+  Future<Result<bool>> deleteAthlete(String id);
   
   // Query Operations
-  Future<Either<String, List<Athlete>>> getActiveAthletes();
-  Future<Either<String, List<Athlete>>> getInactiveAthletes();
-  Future<Either<String, List<Athlete>>> searchAthletes(String query);
-  Future<Either<String, List<Athlete>>> getAthletesByGoal(TrainingGoal goal);
-  Future<Either<String, List<Athlete>>> getAthletesByFitnessLevel(FitnessLevel level);
+  Future<Result<List<Athlete>>> getActiveAthletes();
+  Future<Result<List<Athlete>>> getInactiveAthletes();
+  Future<Result<List<Athlete>>> searchAthletes(String query);
+  Future<Result<List<Athlete>>> getAthletesByGoal(String goal);
+  Future<Result<List<Athlete>>> getAthletesByFitnessLevel(String level);
   
   // Batch Operations
-  Future<Either<String, List<Athlete>>> createMultipleAthletes(List<Athlete> athletes);
-  Future<Either<String, bool>> updateMultipleAthletes(List<Athlete> athletes);
-  Future<Either<String, bool>> deleteMultipleAthletes(List<String> ids);
+  Future<Result<List<Athlete>>> createMultipleAthletes(List<Athlete> athletes);
+  Future<Result<bool>> updateMultipleAthletes(List<Athlete> athletes);
+  Future<Result<bool>> deleteMultipleAthletes(List<String> ids);
   
   // Statistics
-  Future<Either<String, Map<String, dynamic>>> getAthleteStatistics();
-  Future<Either<String, Map<String, int>>> getAthleteCountByStatus();
-  Future<Either<String, Map<TrainingGoal, int>>> getAthleteCountByGoal();
+  Future<Result<Map<String, dynamic>>> getAthleteStatistics();
+  Future<Result<Map<String, int>>> getAthleteCountByStatus();
+  Future<Result<Map<String, int>>> getAthleteCountByGoal();
   
   // Real-time updates (Stream)
   Stream<List<Athlete>> watchAllAthletes();
@@ -32,11 +41,12 @@ abstract class IAthleteRepository {
   Stream<List<Athlete>> watchActiveAthletes();
   
   // Import/Export
-  Future<Either<String, String>> exportAthletesToJson();
-  Future<Either<String, List<Athlete>>> importAthletesFromJson(String json);
-  Future<Either<String, String>> exportAthleteToCsv(String athleteId);
+  Future<Result<String>> exportAthletesToJson();
+  Future<Result<List<Athlete>>> importAthletesFromJson(String json);
+  Future<Result<String>> exportAthleteToCsv(String athleteId);
   
   // Cache Management
-  Future<Either<String, bool>> clearCache();
-  Future<Either<String, bool>> syncWithRemote();
+  Future<Result<bool>> clearCache();
+  Future<Result<bool>> syncWithRemote();
 }
+        
